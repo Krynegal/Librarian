@@ -3,7 +3,7 @@ package telegram
 import (
 	"encoding/json"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
 
@@ -22,7 +22,7 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) error {
 /*
 Переменные, указывающее, по какому параметру
 будет осуществляться поиск в БД
- */
+*/
 var (
 	waitBookTitle      bool
 	waitAuthorLastname bool
@@ -34,14 +34,14 @@ func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 	msg := tgbotapi.NewMessage(message.Chat.ID, message.Text)
 
 	if waitBookTitle {
-		msg.Text, _ = b.storage.GetBooksByTitle(msg.Text)
+		//msg.Text, _ = b.storage.GetBooksByTitle(msg.Text)
 		msg.Text, _ = b.makeReplyMessage(&msg)
 		waitBookTitle = false
 		msg.ReplyMarkup = makeChoiceKeyboard()
 	}
 
 	if waitAuthorLastname {
-		msg.Text, _ = b.storage.GetBooksByAuthor(msg.Text)
+		//msg.Text, _ = b.storage.GetBooksByAuthor(msg.Text)
 		msg.Text, _ = b.makeReplyMessage(&msg)
 		waitAuthorLastname = false
 		msg.ReplyMarkup = makeChoiceKeyboard()
@@ -87,8 +87,7 @@ func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 Отправляет кнопку "Поиск" при запуске бота
 */
 func (b *Bot) handleStartCommand(message *tgbotapi.Message) error {
-	msg := tgbotapi.NewMessage(message.Chat.ID, "Я не знаю такой команды")
-	msg.Text = "Чтобы приступить к поиску, нажмите кнопку Поиск"
+	msg := tgbotapi.NewMessage(message.Chat.ID, "Чтобы приступить к поиску, нажмите кнопку Поиск")
 	findButton := tgbotapi.NewKeyboardButton("Поиск")
 
 	keyboard := tgbotapi.NewReplyKeyboard([]tgbotapi.KeyboardButton{findButton})
@@ -121,24 +120,28 @@ func makeChoiceKeyboard() tgbotapi.ReplyKeyboardMarkup {
 Иначе - отправить сообщение о неуспешном поиске
 */
 func (b *Bot) makeReplyMessage(msg *tgbotapi.MessageConfig) (string, error) {
-	if msg.Text != "null" {
-		msgFound := tgbotapi.NewMessage(msg.BaseChat.ChatID, "Вот что я нашёл")
-		_, err := b.bot.Send(msgFound)
-		if err != nil {
-			return "", err
-		}
-	} else {
+	if msg.Text == "null" {
 		return "К сожалению, ничего не нашел по вашему запросу", nil
 	}
-	return makeRepresentativeData(msg.Text), nil
+	msgFound := tgbotapi.NewMessage(msg.BaseChat.ChatID, "Вот что я нашёл")
+	_, err := b.bot.Send(msgFound)
+	if err != nil {
+		return "", err
+	}
+	
+	resp, err := makeRepresentativeData(msg.Text)
+	if err != nil {
+		return "", err
+	}
+	return resp, nil
 }
 
-func makeRepresentativeData(msg string) string {
+func makeRepresentativeData(msg string) (string, error) {
 	//var b storage.BookInfo
 	//var sliceRes []storage.BookInfo
 	var result []map[string]interface{}
 	if err := json.Unmarshal([]byte(msg), &result); err != nil {
-		fmt.Println(err)
+		return "", err
 	}
 	fmt.Println("\nmsg: ", msg)
 	fmt.Println("\nresult: ", result)
@@ -153,5 +156,5 @@ func makeRepresentativeData(msg string) string {
 			value["name"], value["bookcase"], value["section_number"], value["shelf_number"])
 	}
 
-	return resString
+	return resString, nil
 }

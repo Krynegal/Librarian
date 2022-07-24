@@ -2,20 +2,19 @@ package telegram
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"tg/pkg/storage"
 )
 
 type Bot struct {
-	bot     *tgbotapi.BotAPI
-	storage storage.Storage
+	bot *tgbotapi.BotAPI
+	//storage storage.Storage
 }
 
-func NewBot(bot *tgbotapi.BotAPI, storage storage.Storage) *Bot {
+func NewBot(bot *tgbotapi.BotAPI) *Bot {
 	return &Bot{
 		bot: bot,
-		storage: storage,
+		//storage: storage,
 	}
 }
 
@@ -24,10 +23,7 @@ func (b *Bot) Start() error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates, err := b.bot.GetUpdatesChan(u)
-	if err != nil {
-		return err
-	}
+	updates := b.bot.GetUpdatesChan(u)
 
 	for update := range updates {
 		if update.Message == nil { // ignore any non-Message Updates

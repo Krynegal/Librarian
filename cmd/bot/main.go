@@ -2,12 +2,11 @@ package main
 
 import (
 	"database/sql"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/Krynegal/Librarian.git/pkg/telegram"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
-	"tg/pkg/storage/postgresDB"
-	"tg/pkg/telegram"
 )
 
 func main() {
@@ -16,17 +15,17 @@ func main() {
 		panic(err)
 	}
 	token := os.Getenv("TOKEN")
-	dataSourceName := os.Getenv("DATA_SOURCE_NAME")
+	//dataSourceName := os.Getenv("DATA_SOURCE_NAME")
 	botApi, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Fatal(err)
 	}
 	botApi.Debug = true
 
-	db, err := initPostgresDB(dataSourceName)
-	storage := postgresDB.NewDatabase(db)
+	//db, err := initPostgresDB(dataSourceName)
+	//storage := postgresDB.NewDatabase(db)
 
-	bot := telegram.NewBot(botApi, storage)
+	bot := telegram.NewBot(botApi)
 	if err := bot.Start(); err != nil {
 		log.Fatal(err)
 	}
