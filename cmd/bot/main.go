@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"github.com/Krynegal/Librarian.git/pkg/storage/postgresDB"
 	"github.com/Krynegal/Librarian.git/pkg/telegram"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -15,17 +16,17 @@ func main() {
 		panic(err)
 	}
 	token := os.Getenv("TOKEN")
-	//dataSourceName := os.Getenv("DATA_SOURCE_NAME")
+	dataSourceName := os.Getenv("DATA_SOURCE_NAME")
 	botApi, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Fatal(err)
 	}
 	botApi.Debug = true
 
-	//db, err := initPostgresDB(dataSourceName)
-	//storage := postgresDB.NewDatabase(db)
+	db, err := initPostgresDB(dataSourceName)
+	storage := postgresDB.NewDatabase(db)
 
-	bot := telegram.NewBot(botApi)
+	bot := telegram.NewBot(botApi, storage)
 	if err := bot.Start(); err != nil {
 		log.Fatal(err)
 	}
@@ -36,6 +37,5 @@ func initPostgresDB(dataSourceName string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return db, nil
 }

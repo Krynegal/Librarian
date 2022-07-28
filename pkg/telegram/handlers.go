@@ -1,8 +1,8 @@
 package telegram
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/Krynegal/Librarian.git/pkg/storage"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
@@ -34,15 +34,15 @@ func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 	msg := tgbotapi.NewMessage(message.Chat.ID, message.Text)
 
 	if waitBookTitle {
-		//msg.Text, _ = b.storage.GetBooksByTitle(msg.Text)
-		msg.Text, _ = b.makeReplyMessage(&msg)
+		bookSlice, _ := b.storage.GetBooksByTitle(msg.Text)
+		msg.Text, _ = b.makeReplyMessage(&msg, bookSlice)
 		waitBookTitle = false
 		msg.ReplyMarkup = makeChoiceKeyboard()
 	}
 
 	if waitAuthorLastname {
-		//msg.Text, _ = b.storage.GetBooksByAuthor(msg.Text)
-		msg.Text, _ = b.makeReplyMessage(&msg)
+		bookSlice, _ := b.storage.GetBooksByAuthor(msg.Text)
+		msg.Text, _ = b.makeReplyMessage(&msg, bookSlice)
 		waitAuthorLastname = false
 		msg.ReplyMarkup = makeChoiceKeyboard()
 	}
@@ -119,7 +119,7 @@ func makeChoiceKeyboard() tgbotapi.ReplyKeyboardMarkup {
 и показать результат запроса.
 Иначе - отправить сообщение о неуспешном поиске
 */
-func (b *Bot) makeReplyMessage(msg *tgbotapi.MessageConfig) (string, error) {
+func (b *Bot) makeReplyMessage(msg *tgbotapi.MessageConfig, books []storage.BookInfo) (string, error) {
 	if msg.Text == "null" {
 		return "К сожалению, ничего не нашел по вашему запросу", nil
 	}
@@ -128,33 +128,19 @@ func (b *Bot) makeReplyMessage(msg *tgbotapi.MessageConfig) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
-	resp, err := makeRepresentativeData(msg.Text)
-	if err != nil {
-		return "", err
-	}
+
+	resp := printBookInfo(books)
 	return resp, nil
 }
 
-func makeRepresentativeData(msg string) (string, error) {
-	//var b storage.BookInfo
-	//var sliceRes []storage.BookInfo
-	var result []map[string]interface{}
-	if err := json.Unmarshal([]byte(msg), &result); err != nil {
-		return "", err
-	}
-	fmt.Println("\nmsg: ", msg)
-	fmt.Println("\nresult: ", result)
-
+func printBookInfo(books []storage.BookInfo) string {
 	var resString string
 	format := "Книга: %s\nШкаф: %s\nСекция: %v\nПолка: %v\n"
-	if len(result) > 1 {
-		format += "\n"
+	for i, b := range books {
+		if i != len(books) {
+			format += "\n"
+		}
+		resString += fmt.Sprintf(format, b.Name, b.Bookcase, b.SectionNumber, b.ShelfNumber)
 	}
-	for _, value := range result {
-		resString += fmt.Sprintf(format,
-			value["name"], value["bookcase"], value["section_number"], value["shelf_number"])
-	}
-
-	return resString, nil
+	return resString
 }

@@ -2,19 +2,20 @@ package telegram
 
 import (
 	"fmt"
+	"github.com/Krynegal/Librarian.git/pkg/storage"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 )
 
 type Bot struct {
-	bot *tgbotapi.BotAPI
-	//storage storage.Storage
+	bot     *tgbotapi.BotAPI
+	storage storage.Storage
 }
 
-func NewBot(bot *tgbotapi.BotAPI) *Bot {
+func NewBot(bot *tgbotapi.BotAPI, storage storage.Storage) *Bot {
 	return &Bot{
-		bot: bot,
-		//storage: storage,
+		bot:     bot,
+		storage: storage,
 	}
 }
 
