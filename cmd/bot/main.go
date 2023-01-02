@@ -24,10 +24,13 @@ func main() {
 	botApi.Debug = true
 
 	db, err := initPostgresDB(dataSourceName)
+	if err != nil {
+		log.Fatal(err)
+	}
 	storage := postgresDB.NewDatabase(db)
 
 	bot := telegram.NewBot(botApi, storage)
-	if err := bot.Start(); err != nil {
+	if err = bot.Start(); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -35,6 +38,9 @@ func main() {
 func initPostgresDB(dataSourceName string) (*sql.DB, error) {
 	db, err := sql.Open("postgres", dataSourceName)
 	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
 		return nil, err
 	}
 	return db, nil

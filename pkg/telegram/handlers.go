@@ -19,15 +19,6 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) error {
 	}
 }
 
-/*
-Переменные, указывающее, по какому параметру
-будет осуществляться поиск в БД
-*/
-//var (
-//	waitBookTitle      bool
-//	waitAuthorLastname bool
-//)
-
 //Основной обработчик диалоговых сообщений
 func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 	log.Printf("[%s] %s", message.From.UserName, message.Text)
