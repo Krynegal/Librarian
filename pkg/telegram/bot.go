@@ -5,17 +5,23 @@ import (
 	"github.com/Krynegal/Librarian.git/pkg/storage"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"sync"
 )
 
 type Bot struct {
-	bot     *tgbotapi.BotAPI
-	storage storage.Storage
+	bot         *tgbotapi.BotAPI
+	storage     storage.Storage
+	StateKeeper StateKeeper
 }
 
 func NewBot(bot *tgbotapi.BotAPI, storage storage.Storage) *Bot {
 	return &Bot{
 		bot:     bot,
 		storage: storage,
+		StateKeeper: StateKeeper{
+			mu:     sync.RWMutex{},
+			states: map[int]string{},
+		},
 	}
 }
 

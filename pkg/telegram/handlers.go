@@ -23,53 +23,47 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) error {
 Переменные, указывающее, по какому параметру
 будет осуществляться поиск в БД
 */
-var (
-	waitBookTitle      bool
-	waitAuthorLastname bool
-)
+//var (
+//	waitBookTitle      bool
+//	waitAuthorLastname bool
+//)
 
 //Основной обработчик диалоговых сообщений
 func (b *Bot) handleMessage(message *tgbotapi.Message) error {
 	log.Printf("[%s] %s", message.From.UserName, message.Text)
 	msg := tgbotapi.NewMessage(message.Chat.ID, message.Text)
 
-	if waitBookTitle {
-		bookSlice, _ := b.storage.GetBooksByTitle(msg.Text)
-		msg.Text, _ = b.makeReplyMessage(&msg, bookSlice)
-		waitBookTitle = false
-		msg.ReplyMarkup = makeChoiceKeyboard()
-	}
+	state := b.StateKeeper.state(int(message.From.ID))
+	log.Printf("\nstate: %s\n", state)
 
-	if waitAuthorLastname {
-		bookSlice, _ := b.storage.GetBooksByAuthor(msg.Text)
-		msg.Text, _ = b.makeReplyMessage(&msg, bookSlice)
-		waitAuthorLastname = false
-		msg.ReplyMarkup = makeChoiceKeyboard()
-	}
-
-	if msg.Text == "Поиск" {
+	switch state {
+	case "search":
 		msg.Text = "Как будем искать?"
 		msg.ReplyMarkup = makeChoiceKeyboard()
-	}
-
-	if msg.Text == "По автору" {
+		log.Printf("\nmsg.Text: %s\n", msg.Text)
+		if msg.Text == "По автору" {
+			b.StateKeeper.update(int(message.From.ID), "byAuthor")
+		} else {
+			b.StateKeeper.update(int(message.From.ID), "byTitle")
+		}
+	case "byAuthor":
 		msg.Text = "Введите фамилию автора"
 		keyboard := tgbotapi.NewRemoveKeyboard(true)
 		msg.ReplyMarkup = keyboard
-	}
-
-	if msg.Text == "По названию" {
+		b.StateKeeper.update(int(message.From.ID), "enterAuthorLastname")
+	case "byTitle":
 		msg.Text = "Введите название книги"
 		keyboard := tgbotapi.NewRemoveKeyboard(true)
 		msg.ReplyMarkup = keyboard
-	}
-
-	if msg.Text == "Введите название книги" {
-		waitBookTitle = true
-	}
-
-	if msg.Text == "Введите фамилию автора" {
-		waitAuthorLastname = true
+		b.StateKeeper.update(int(message.From.ID), "enterBookTitle")
+	case "enterBookTitle":
+		bookSlice, _ := b.storage.GetBooksByTitle(msg.Text)
+		msg.Text, _ = b.makeReplyMessage(&msg, bookSlice)
+		msg.ReplyMarkup = makeChoiceKeyboard()
+	case "enterAuthorLastname":
+		bookSlice, _ := b.storage.GetBooksByAuthor(msg.Text)
+		msg.Text, _ = b.makeReplyMessage(&msg, bookSlice)
+		msg.ReplyMarkup = makeChoiceKeyboard()
 	}
 
 	if msg.Text != message.Text {
@@ -94,6 +88,7 @@ func (b *Bot) handleStartCommand(message *tgbotapi.Message) error {
 	msg.ReplyMarkup = keyboard
 
 	_, err := b.bot.Send(msg)
+	b.StateKeeper.update(int(message.From.ID), "search")
 	return err
 }
 
@@ -111,6 +106,7 @@ func makeChoiceKeyboard() tgbotapi.ReplyKeyboardMarkup {
 		tgbotapi.NewKeyboardButton("По названию"),
 	}
 	keyboard := tgbotapi.NewReplyKeyboard(buttons)
+
 	return keyboard
 }
 
