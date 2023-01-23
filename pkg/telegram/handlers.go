@@ -97,7 +97,6 @@ func makeChoiceKeyboard() tgbotapi.ReplyKeyboardMarkup {
 		tgbotapi.NewKeyboardButton("По названию"),
 	}
 	keyboard := tgbotapi.NewReplyKeyboard(buttons)
-
 	return keyboard
 }
 
